@@ -1,2 +1,2 @@
 # fixr1
-Edit web pages of a live site using Python and ftplib
+Bulk update web pages of a live site using Python and ftplib.
