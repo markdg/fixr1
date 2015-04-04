@@ -7,5 +7,6 @@ traverses two levels of directories.
 
 Set your ftp login credentials and defaults in config.py
 The from the command line run
-- python fixr1.py
+
+    python fixr1.py
 and follow the prompts.
