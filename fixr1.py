@@ -1,10 +1,11 @@
-# Edit published static web pages via ftp
+# Bulk edit published static web pages via ftp
 import ftplib, os, socket
 
-# Specify HOST, USERNAME, PASSWORD, BASEDIR, KEYWORD in your config.py file
+# Specify HOST, USERNAME, PASSWORD, BASEDIR, KEYWORD, FLAGWORD in your config.py file
 from config import *
 
 def ftp_connect():
+	# Establish ftp connection
 	try:
 		con = ftplib.FTP(HOST)
 	except (socket.error, socket.gaierror), e:
@@ -14,6 +15,7 @@ def ftp_connect():
 	return con
 
 def ftp_login(con):
+	# Login to the ftp server
 	try:
 	    con.login(USERNAME, PASSWORD)
 	except ftplib.error_perm:
@@ -23,6 +25,7 @@ def ftp_login(con):
 	print '*** Logged in as ', USERNAME
 
 def ftp_cwd(con, target_dir=BASEDIR):
+	# Change into the working directory
 	try:
 	    con.cwd(target_dir)
 	except ftplib.error_perm:
@@ -32,7 +35,7 @@ def ftp_cwd(con, target_dir=BASEDIR):
 	print '*** Changed to "%s" folder' % target_dir
 
 def ftp_getdir(con):
-	# Gets the directory listing
+	# Get the directory listing
 	ls = []
 	try:
 		con.dir(ls.append)
@@ -43,14 +46,14 @@ def ftp_getdir(con):
 	return ls
 
 def get_directories(ls):
-	# Gets just the directories from the directory listing
+	# Get just the directories from the directory listing
 	dirs = [item.split(' ')[-1] for item in ls if 'd' in item.split(' ')[0]]
 	dirs = dirs[2:] # Strip out the . and .. directories
 	print '*** Got the list of directories'
 	return dirs
 	
 def get_phpfiles(con, ls):
-	# Gets just the php files from the directory listing
+	# Get just the php files from the directory listing
 	file_names = [item.split(' ')[-1] for item in ls]
 	php_files = [item for item in file_names if '.php' in item and '.bak' not in item]
 	print '*** Got the list of php files'
@@ -68,7 +71,7 @@ def get_phpfiles(con, ls):
 	return php_files
 	
 def fix_phpfiles(php_files):
-	# Deletes the line containing KEYWORD
+	# Delete the line containing KEYWORD
 	for infile in php_files:
 		with open(infile, 'r') as ifile:
 			with open('temp.php', 'wb') as outfile:
@@ -83,7 +86,7 @@ def fix_phpfiles(php_files):
 	print '*** Finished fixing all files in this directory'
 
 def upload_fixedfiles(con, php_files):
-	# Uploads the fixed files and backups of the original files
+	# Upload the fixed files plus backups of the original files
 	pfiles = []
 	for item in php_files:
 		pfiles.append(item)
@@ -100,12 +103,8 @@ def upload_fixedfiles(con, php_files):
 	print '*** Done uploading the php files'	
 
 def delete_line():
-	con, dirs = ftp_setup()
-	#con = ftp_connect()
-	#ftp_login(con)
-	#ftp_cwd(con, BASEDIR) # Start in BASEDIR
-	#ls = ftp_getdir(con) # Get the directory listing
-	#dirs = get_directories(ls) # Extract just the dirs to traverse
+	# Run procedure to bulk delete selected line from files
+	con, ls, dirs = ftp_setup()
 	for d in dirs:
 		ftp_cwd(con, d) # Change into working directory
 		ls = ftp_getdir(con)
@@ -117,12 +116,8 @@ def delete_line():
 	print '*** All done. Disconnected from "%s"' % HOST
 	
 def delete_file(fname):
-	con, dirs = ftp_setup()
-	#con = ftp_connect()
-	#ftp_login(con)
-	#ftp_cwd(con, BASEDIR) # Start in BASEDIR
-	#ls = ftp_getdir(con) # Get the directory listing
-	#dirs = get_directories(ls) # Extract just the dirs to traverse
+	# Deletes named file from all subdirs of BASEDIR
+	con, ls, dirs = ftp_setup()
 	for d in dirs:
 		ftp_cwd(con, d) # Change into working directory
 		ls = ftp_getdir(con)
@@ -136,22 +131,32 @@ def delete_file(fname):
 	con.quit()
 	print '*** Deleted file ' + fname + ' from all subdirectories'
 	
-def find_badword(BADWORD, ls):
-	# Makes a list of files that contain BADWORD
+def find_flagword(FLAGWORD, ls):
+	# Makes a list of files that contain FLAGWORD
 	pass
 
 def list_subdirectories():
-	con, dirs = ftp_setup()
+	# Helper function to print list of subdirs to the terminal
+	con, ls, dirs = ftp_setup()
 	print 'Subdirectories of %s' % BASEDIR
 	print dirs
 	
+def list_files():
+	# Helper function to print list of files to the terminal
+	con, ls, dirs = ftp_setup()
+	files = [item.split(' ')[-1] for item in ls]
+	files = files[2:] # Remove . and ..
+	print 'Files in %s' % BASEDIR
+	print files
+	
 def ftp_setup():
+	# Make ftp connection, login, set base dir, get file and dir lists 
 	con = ftp_connect()
 	ftp_login(con)
 	ftp_cwd(con, BASEDIR) # Start in BASEDIR
 	ls = ftp_getdir(con) # Get the directory listing
 	dirs = get_directories(ls) # Extract just the dirs to traverse
-	return con, dirs
+	return con, ls, dirs
 
 ############
 ### Main ###
@@ -168,8 +173,9 @@ while choice != 99:
 	print '1 - change BASEDIR'
 	print '2 - delete a file from subdirs of BASEDIR'
 	print '3 - delete line containing KEYWORD in all files in subdirs of BASEDIR'
-	print '4 - make list of files in subdirs of BASEDIR containing BADWORD'
+	print '4 - make list of files in subdirs of BASEDIR containing FLAGWORD'
 	print '5 - list subdirectories of BASEDIR'
+	print '6 - list files in BASEDIR'
 	print '99 - exit\n'
 	choice = int(raw_input('Choose an option from above: '))
 	if choice == 1: # Change BASEDIR
@@ -183,16 +189,23 @@ while choice != 99:
 		if confirm == 'y':
 			delete_file(FILENAME)
 		else:
-			print 'Action canceled\n'
+			print 'Action aborted\n'
 	elif choice == 3: # Delete line containing KEYWORD
-		print 'Selected: delete line containing KEYWORD from all files in subdirectories of %s' % BASEDIR
+		print 'Delete line containing KEYWORD from all files in subdirs of %s' % BASEDIR
 		KEYWORD = raw_input('Enter KEYWORD: ')
-		print 'KEYWORD is now "%s"\n' % KEYWORD
-	elif choice == 4: # Find BADWORD
-		print 'Chose 3'
-		print 'BADWORD is currently set to "%s"\n' % BADWORD
+		print 'KEYWORD is now "%s"' % KEYWORD
+		confirm = raw_input('Proceed with "%s" as KEYWORD? ' % KEYWORD)
+		if confirm == 'y':
+			delete_line()
+		else:
+			print 'Action aborted\n'
+	elif choice == 4: # Find FLAGWORD
+		print 'FLAGWORD is currently set to "%s"\n' % FLAGWORD
 	elif choice == 5: # List subdirectories
 		list_subdirectories()
+		print ''
+	elif choice == 6: # List files
+		list_files()
 		print ''
 	elif choice == 99:
 		print 'Exiting now'
