@@ -1,4 +1,4 @@
-# Removes selected lines from published static web pages via ftp
+# Edit published static web pages via ftp
 import ftplib, os, socket
 
 # Specify HOST, USERNAME, PASSWORD, BASEDIR, KEYWORD in your config.py file

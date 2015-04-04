@@ -1,3 +1,4 @@
+# Replace items in brackets with your own
 HOST = '<your-ftp-server>'
 USERNAME = '<your-username>'
 PASSWORD = '<your-password>'
