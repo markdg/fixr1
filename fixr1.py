@@ -1,7 +1,7 @@
 # Bulk edit published static web pages via ftp
 import ftplib, os, socket
 
-# Specify HOST, USERNAME, PASSWORD, BASEDIR, KEYWORD, FLAGWORD in your config.py file
+# Specify HOST, USERNAME, PASSWORD, BASEDIR, KEYWORD, in config.py
 from config import *
 
 def ftp_connect():
@@ -129,11 +129,7 @@ def delete_file(fname):
 			print '*** ' + fname + ' not found in directory ' + d
 		ftp_cwd(con, BASEDIR)
 	con.quit()
-	print '*** Deleted file ' + fname + ' from all subdirectories'
-	
-def find_flagword(FLAGWORD, ls):
-	# Makes a list of files that contain FLAGWORD
-	pass
+	print '*** Deleted file ' + fname + ' from all subdirectories\n'
 
 def list_subdirectories():
 	# Helper function to print list of subdirs to the terminal
@@ -200,7 +196,11 @@ while choice != 99:
 		else:
 			print 'Action aborted\n'
 	elif choice == 4: # Find FLAGWORD
-		print 'FLAGWORD is currently set to "%s"\n' % FLAGWORD
+		print 'Create list of files containing FLAGWORD'
+		FLAGWORD = raw_input('Enter FLAGWORD: ')
+		confirm = raw_input('Proceed with "%s" as FLAGWORD?: ' % FLAGWORD)
+		if confirm == 'y':
+			found_list = find_flagword()
 	elif choice == 5: # List subdirectories
 		list_subdirectories()
 		print ''
