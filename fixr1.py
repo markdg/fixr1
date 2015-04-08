@@ -78,7 +78,7 @@ def fix_phpfiles(php_files):
 			    for line in ifile:
 			        if KEYWORD not in line:
 						outfile.write(line)
-			outfile.close()
+		outfile.close()
 		ifile.close()
 		print '*** Fixed file "%s"' % infile
 		os.rename(infile, infile + '.bak')
@@ -114,7 +114,19 @@ def delete_line():
 		ftp_cwd(con, BASEDIR) # Back up to BASEDIR
 	con.quit()
 	print '*** All done. Disconnected from "%s"' % HOST
-	
+
+def resume_delete_line(con, dirs):
+	# Manually resume if delete_line() gets interrupted
+	for d in dirs:
+		ftp_cwd(con, d) # Change into working directory
+		ls = ftp_getdir(con)
+		php_files = get_phpfiles(con, ls)
+		fix_phpfiles(php_files)
+		upload_fixedfiles(con, php_files)
+		ftp_cwd(con, BASEDIR) # Back up to BASEDIR
+	con.quit()
+	print '*** All done. Disconnected from "%s"' % HOST
+
 def delete_file(fname):
 	# Deletes named file from all subdirs of BASEDIR
 	con, ls, dirs = ftp_setup()
@@ -169,9 +181,8 @@ while choice != 99:
 	print '1 - change BASEDIR'
 	print '2 - delete a file from subdirs of BASEDIR'
 	print '3 - delete line containing KEYWORD in all files in subdirs of BASEDIR'
-	print '4 - make list of files in subdirs of BASEDIR containing FLAGWORD'
-	print '5 - list subdirectories of BASEDIR'
-	print '6 - list files in BASEDIR'
+	print '4 - list subdirectories of BASEDIR'
+	print '5 - list files in BASEDIR'
 	print '99 - exit\n'
 	choice = int(raw_input('Choose an option from above: '))
 	if choice == 1: # Change BASEDIR
@@ -195,16 +206,10 @@ while choice != 99:
 			delete_line()
 		else:
 			print 'Action aborted\n'
-	elif choice == 4: # Find FLAGWORD
-		print 'Create list of files containing FLAGWORD'
-		FLAGWORD = raw_input('Enter FLAGWORD: ')
-		confirm = raw_input('Proceed with "%s" as FLAGWORD?: ' % FLAGWORD)
-		if confirm == 'y':
-			found_list = find_flagword()
-	elif choice == 5: # List subdirectories
+	elif choice == 4: # List subdirectories
 		list_subdirectories()
 		print ''
-	elif choice == 6: # List files
+	elif choice == 5: # List files
 		list_files()
 		print ''
 	elif choice == 99:
